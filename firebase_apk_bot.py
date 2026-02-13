@@ -1529,6 +1529,13 @@ def find_java_tools():
 
 async def main():
     """Bot run karo"""
+    # Start web server for Render.com (keeps service alive)
+    try:
+        from web_server import start_web_server
+        start_web_server()
+    except Exception as e:
+        print(f"⚠️ Web server not started: {e}")
+    
     ensure_dirs()
     
     # Java tools check
