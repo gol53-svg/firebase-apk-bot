@@ -42,9 +42,36 @@ BOT_TOKEN = "8442989333:AAHKTjaacGUl0MOAaOJ4ae0zGd7tFI8_-dA"
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 APKTOOL_PATH = os.path.join(WORK_DIR, "apktool.jar")
 KEYSTORE_PATH = os.path.join(WORK_DIR, "debug.keystore")
-JAVA_PATH = "java"  # Will be updated at runtime
-KEYTOOL_PATH = "keytool"  # Will be updated at runtime
-JARSIGNER_PATH = "jarsigner"  # Will be updated at runtime
+
+# Auto-detect Java paths
+def find_java():
+    """Find Java executable in common locations"""
+    possible_paths = [
+        "java",  # In PATH
+        "/usr/bin/java",  # Linux default
+        "/usr/lib/jvm/default-java/bin/java",  # Debian/Ubuntu
+        "/usr/lib/jvm/java-17-openjdk-amd64/bin/java",  # Ubuntu OpenJDK 17
+        "/usr/lib/jvm/java-11-openjdk-amd64/bin/java",  # Ubuntu OpenJDK 11
+        os.path.join(os.environ.get("JAVA_HOME", ""), "bin", "java"),  # JAVA_HOME
+    ]
+    
+    for path in possible_paths:
+        if not path:
+            continue
+        try:
+            result = subprocess.run([path, "-version"], capture_output=True, timeout=5)
+            if result.returncode == 0:
+                logger.info(f"✅ Java found at: {path}")
+                return path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    
+    logger.error("❌ Java not found in any common location!")
+    return "java"  # Fallback
+
+JAVA_PATH = find_java()
+KEYTOOL_PATH = JAVA_PATH.replace("java", "keytool") if JAVA_PATH != "java" else "keytool"
+JARSIGNER_PATH = JAVA_PATH.replace("java", "jarsigner") if JAVA_PATH != "java" else "jarsigner"
 
 # Admin Channel Configuration
 ADMIN_CHANNEL_ID = "-1003861506347"  # Your admin channel ID
