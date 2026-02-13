@@ -50,8 +50,9 @@ def find_java():
         "java",  # In PATH
         "/usr/bin/java",  # Linux default
         "/usr/lib/jvm/default-java/bin/java",  # Debian/Ubuntu
-        "/usr/lib/jvm/java-17-openjdk-amd64/bin/java",  # Ubuntu OpenJDK 17
-        "/usr/lib/jvm/java-11-openjdk-amd64/bin/java",  # Ubuntu OpenJDK 11
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",  # OpenJDK 21
+        "/usr/lib/jvm/java-17-openjdk-amd64/bin/java",  # OpenJDK 17
+        "/usr/lib/jvm/java-11-openjdk-amd64/bin/java",  # OpenJDK 11
         os.path.join(os.environ.get("JAVA_HOME", ""), "bin", "java"),  # JAVA_HOME
     ]
     
@@ -59,14 +60,16 @@ def find_java():
         if not path:
             continue
         try:
-            result = subprocess.run([path, "-version"], capture_output=True, timeout=5)
+            result = subprocess.run([path, "-version"], capture_output=True, timeout=5, stderr=subprocess.STDOUT)
             if result.returncode == 0:
                 logger.info(f"✅ Java found at: {path}")
                 return path
-        except (FileNotFoundError, subprocess.TimeoutExpired):
+        except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
+            logger.debug(f"Tried {path}: {e}")
             continue
     
     logger.error("❌ Java not found in any common location!")
+    logger.error("Please install Java JDK/JRE")
     return "java"  # Fallback
 
 JAVA_PATH = find_java()
