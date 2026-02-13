@@ -1556,8 +1556,13 @@ async def main():
         return
     
     print("🤖 Bot starting...")
+    print(f"📱 Bot Token: {BOT_TOKEN[:20]}...")
     
-    application = Application.builder().token(BOT_TOKEN).build()
+    try:
+        application = Application.builder().token(BOT_TOKEN).build()
+    except Exception as e:
+        print(f"❌ ERROR: Failed to create bot application: {e}")
+        return
     
     # Main conversation handler with buttons
     main_conv_handler = ConversationHandler(
@@ -1613,17 +1618,24 @@ async def main():
     application.add_handler(CommandHandler("keyboard", keyboard_command))
     
     print("✅ Bot is running! Press Ctrl+C to stop")
+    logger.info("🚀 Firebase APK Bot started successfully!")
+    logger.info(f"📱 Waiting for messages...")
     
     async with application:
         await application.start()
+        logger.info("✅ Application started, beginning polling...")
         await application.updater.start_polling(drop_pending_updates=True)
+        logger.info("✅ Polling started successfully!")
         
         # Keep running until interrupted
         stop_event = asyncio.Event()
         try:
             await stop_event.wait()
         except asyncio.CancelledError:
+            logger.info("Bot stopped by user")
             pass
+        except Exception as e:
+            logger.error(f"❌ Bot error: {e}")
         finally:
             await application.updater.stop()
             await application.stop()
