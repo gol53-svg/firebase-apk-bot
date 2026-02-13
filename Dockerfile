@@ -23,8 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all files
 COPY . .
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Verify Java installation at build time
 RUN java -version
 
-# Run the bot
-CMD ["python", "firebase_apk_bot.py"]
+# Run the bot with startup script
+CMD ["./start.sh"]
