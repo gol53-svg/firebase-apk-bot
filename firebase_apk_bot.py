@@ -1,5 +1,5 @@
 """
-Telegram Bot for Firebase APK Modifier & Extractor
+Telegram Bot for Firebase APK Modifier & Extractor v2.0
 - APK receive karo
 - Firebase config extract karo (Extract mode)
 - Firebase config inject karo (Modify mode)
