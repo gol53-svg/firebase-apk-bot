@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 CHOOSING_MODE, WAITING_APK, WAITING_DATABASE_URL, WAITING_API_KEY, WAITING_APP_ID, WAITING_STORAGE_BUCKET, WAITING_PROJECT_ID, WAITING_EXTRACT_APK = range(8)
 
 # Configuration
-BOT_TOKEN = "8442989333:AAHKTjaacGUl0MOAaOJ4ae0zGd7tFI8_-dA"
+BOT_TOKEN = "8442989333:AAEVpq9C-09Pcfw_YnctofK4-5uS1GcCXHs"
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 APKTOOL_PATH = os.path.join(WORK_DIR, "apktool.jar")
 KEYSTORE_PATH = os.path.join(WORK_DIR, "debug.keystore")
