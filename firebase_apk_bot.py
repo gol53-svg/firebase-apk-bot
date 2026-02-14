@@ -1572,24 +1572,46 @@ async def main():
     
     ensure_dirs()
     
-    # Java tools check
-    java_exe, keytool_exe, jarsigner_exe = find_java_tools()
-    if not java_exe:
+    # Force Java paths for Docker/Render environment
+    import os
+    global JAVA_PATH, KEYTOOL_PATH, JARSIGNER_PATH
+    
+    # Try common Java locations in Docker
+    java_locations = [
+        "/usr/bin/java",
+        "/usr/lib/jvm/default-java/bin/java",
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "java"
+    ]
+    
+    java_found = None
+    for java_path in java_locations:
+        try:
+            result = subprocess.run([java_path, "-version"], capture_output=True, timeout=5)
+            if result.returncode == 0:
+                java_found = java_path
+                print(f"✅ Java found at: {java_path}")
+                break
+        except:
+            continue
+    
+    if not java_found:
         print("❌ ERROR: Java not found!")
         print("Please install Java JDK/JRE:")
         print("Download from: https://www.oracle.com/java/technologies/downloads/")
         print("After installation, restart your terminal/IDE")
         return
     
-    print(f"✅ Java found: {java_exe}")
-    print(f"✅ keytool: {keytool_exe}")
-    print(f"✅ jarsigner: {jarsigner_exe}")
+    JAVA_PATH = java_found
+    java_bin_dir = os.path.dirname(java_found)
+    KEYTOOL_PATH = os.path.join(java_bin_dir, "keytool")
+    JARSIGNER_PATH = os.path.join(java_bin_dir, "jarsigner")
     
-    # Store paths globally
-    global JAVA_PATH, KEYTOOL_PATH, JARSIGNER_PATH
-    JAVA_PATH = java_exe
-    KEYTOOL_PATH = keytool_exe
-    JARSIGNER_PATH = jarsigner_exe
+    print(f"✅ Java: {JAVA_PATH}")
+    print(f"✅ keytool: {KEYTOOL_PATH}")
+    print(f"✅ jarsigner: {JARSIGNER_PATH}")
+    
+    ensure_dirs()
     
     # Apktool check aur download
     if not download_apktool():
