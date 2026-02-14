@@ -292,6 +292,7 @@ def get_main_keyboard():
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start command handler with buttons"""
+    logger.info(f"🎯 START command received from user {update.effective_user.id}")
     context.user_data.clear()
     
     welcome_text = """
@@ -299,7 +300,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 Main aapki APK ke saath 2 kaam kar sakta hoon!
 
-� *Features:*
+📋 *Features:*
 
 🔍 *Extract Mode* - APK se Firebase config nikalo
 ✏️ *Inject Mode* - APK mein Firebase config inject karo
@@ -316,6 +317,7 @@ Main aapki APK ke saath 2 kaam kar sakta hoon!
         parse_mode='Markdown',
         reply_markup=get_main_keyboard()
     )
+    logger.info("✅ Start message sent successfully")
     return CHOOSING_MODE
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -372,6 +374,7 @@ Wapas menu ke liye /start bhejo!
 async def handle_keyboard_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle permanent keyboard button presses"""
     text = update.message.text
+    logger.info(f"🎯 Keyboard button pressed: {text} by user {update.effective_user.id}")
     
     if text == "🔍 Extract":
         context.user_data.clear()
@@ -1679,6 +1682,14 @@ async def main():
     application.add_handler(modify_conv_handler)
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("keyboard", keyboard_command))
+    
+    # Debug handler - catches ALL messages to see what's happening
+    async def debug_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        logger.info(f"🔍 DEBUG: Message received from {update.effective_user.id}")
+        logger.info(f"🔍 DEBUG: Message text: {update.message.text if update.message else 'No text'}")
+        logger.info(f"🔍 DEBUG: Update type: {type(update)}")
+    
+    application.add_handler(MessageHandler(filters.ALL, debug_handler), group=1)
     
     print("✅ Bot is running! Press Ctrl+C to stop")
     logger.info("🚀 Firebase APK Bot started successfully!")
