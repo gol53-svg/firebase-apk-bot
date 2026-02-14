@@ -13,9 +13,31 @@ Telegram bot for modifying and extracting Firebase configurations from APK files
 - Java JDK 17+
 - Telegram Bot Token
 
-## Installation
+## 🚀 Deployment
 
-### Local Setup
+### Deploy on Render.com (Recommended)
+
+1. **Fork this repository**
+2. **Go to Render.com** and sign up with GitHub
+3. **Create New Web Service:**
+   - Connect this repository
+   - Runtime: **Docker**
+   - Plan: **Free**
+4. **Add Environment Variable:**
+   - Key: `BOT_TOKEN`
+   - Value: Your Telegram bot token
+5. **Deploy!**
+
+Bot will be live in 2-5 minutes!
+
+### Keep Bot Alive (Free Tier)
+
+Use UptimeRobot to ping your service:
+1. Go to https://uptimerobot.com
+2. Add monitor: `https://your-app.onrender.com/health`
+3. Interval: 5 minutes
+
+## Local Setup
 
 1. Clone the repository:
 ```bash

@@ -843,14 +843,14 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode='Markdown'
         )
         
-        # Step 5: Sign APK with uber-apk-signer (automatic zipalign + v1/v2/v3 signing)
+        # Step 5: Sign APK with proper v1+v2 signing
         create_debug_keystore()
         
         signed_apk = os.path.join(output_dir, f"modified_{apk_name}")
         
         signed_successfully = False
         
-        # Method 1: uber-apk-signer (BEST - automatic everything)
+        # Method 1: uber-apk-signer (BEST - automatic zipalign + v1/v2/v3 signing)
         uber_signer_path = os.path.join(WORK_DIR, "uber-apk-signer.jar")
         if not os.path.exists(uber_signer_path):
             try:
@@ -873,9 +873,10 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     "--ksAlias", KEY_ALIAS,
                     "--allowResign",
                     "--overwrite",
+                    "--zipAlignEnabled", "true",
                     "-o", output_dir
                 ]
-                result = subprocess.run(uber_cmd, capture_output=True, text=True, timeout=120, shell=True)
+                result = subprocess.run(uber_cmd, capture_output=True, text=True, timeout=180, shell=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 
                 if result.returncode == 0:
                     # uber-apk-signer creates file with -aligned-debugSigned.apk suffix
@@ -885,36 +886,64 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     if os.path.exists(uber_output):
                         shutil.copy(uber_output, signed_apk)
                         signed_successfully = True
-                        logger.info("Signed with uber-apk-signer (v1+v2+v3, zipaligned)")
+                        logger.info("✅ Signed with uber-apk-signer (v1+v2+v3, zipaligned)")
+                    else:
+                        # Try to find any signed APK in output dir
+                        for file in os.listdir(output_dir):
+                            if file.endswith("-aligned-debugSigned.apk"):
+                                shutil.copy(os.path.join(output_dir, file), signed_apk)
+                                signed_successfully = True
+                                logger.info("✅ Signed APK found and copied")
+                                break
+                else:
+                    logger.warning(f"uber-apk-signer error: {result.stderr}")
             except Exception as e:
                 logger.warning(f"uber-apk-signer failed: {e}")
         
-        # Method 2: jarsigner only (Simple fallback)
+        # Method 2: jarsigner with v1 signing (fallback)
         if not signed_successfully:
             try:
+                # First copy unsigned to signed location
+                shutil.copy(unsigned_apk, signed_apk)
+                
                 sign_cmd = [
                     JARSIGNER_PATH,
+                    "-verbose",
                     "-sigalg", "SHA256withRSA",
                     "-digestalg", "SHA-256",
                     "-keystore", KEYSTORE_PATH,
                     "-storepass", KEYSTORE_PASS,
                     "-keypass", KEY_PASS,
-                    "-signedjar", signed_apk,
-                    unsigned_apk,
+                    signed_apk,
                     KEY_ALIAS
                 ]
                 result = subprocess.run(sign_cmd, capture_output=True, text=True, timeout=60, shell=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 
                 if result.returncode == 0:
                     signed_successfully = True
-                    logger.info("Signed with jarsigner")
+                    logger.info("✅ Signed with jarsigner (v1 only)")
+                else:
+                    logger.warning(f"jarsigner error: {result.stderr}")
             except Exception as e:
                 logger.warning(f"jarsigner failed: {e}")
         
         # Last resort: copy unsigned (will not install but at least user gets file)
         if not signed_successfully:
-            logger.warning("All signing methods failed, using unsigned APK (may not install)")
+            logger.warning("⚠️ All signing methods failed, using unsigned APK (may not install)")
             shutil.copy(unsigned_apk, signed_apk)
+            
+            # User ko warning do
+            await progress_msg.edit_text(
+                "⚠️ *Warning: APK Signing Issue*\n\n"
+                "APK sign nahi ho paya properly.\n\n"
+                "*Install karne ke liye:*\n"
+                "1. Purana app uninstall karo (agar installed hai)\n"
+                "2. Settings → Security → Unknown Sources enable karo\n"
+                "3. APK install karo\n\n"
+                "Ya phir apne PC pe manually sign karo using apksigner.",
+                parse_mode='Markdown'
+            )
+            await asyncio.sleep(3)
         
         await progress_msg.edit_text(
             "🔧 *Processing...*\n\n"
@@ -948,7 +977,12 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"   • Storage: `{context.user_data['google_storage_bucket']}`\n"
             f"   • Project: `{context.user_data['project_id']}`\n\n"
             f"📱 *New APK Details:*\n"
-            f"   • Filename: `{random_apk_name}`\n"
+            f"   • Filename: `{random_apk_name}`\n\n"
+            f"⚠️ *Installation Instructions:*\n"
+            f"1. Purana app uninstall karo (agar installed hai)\n"
+            f"2. Settings → Security → Unknown Sources ON karo\n"
+            f"3. Downloaded APK install karo\n\n"
+            f"💡 *Note:* Package name change hone ki wajah se purana aur naya app dono sath mein nahi chal sakte!"
             f"   • Signed: ✅ Yes\n"
             f"   • Zipaligned: ✅ Yes\n\n"
             "⚠️ *Installation Tips:*\n"
@@ -985,7 +1019,7 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"   • New: `{new_pkg}`\n\n"
             f"🔥 *Firebase Config Injected:*\n"
             f"   • Database: `{context.user_data['firebase_database_url']}`\n"
-            f"   • API Key: `{context.user_data['google_api_key'][:25]}...`\n"
+            f"   • API Key: `{context.user_data['google_api_key']}`\n"
             f"   • App ID: `{context.user_data['google_app_id']}`\n"
             f"   • Storage: `{context.user_data['google_storage_bucket']}`\n"
             f"   • Project: `{context.user_data['project_id']}`\n\n"
@@ -1529,6 +1563,13 @@ def find_java_tools():
 
 async def main():
     """Bot run karo"""
+    # Start web server for Render.com (keeps service alive)
+    try:
+        from web_server import start_web_server
+        start_web_server()
+    except Exception as e:
+        print(f"⚠️ Web server not started: {e}")
+    
     ensure_dirs()
     
     # Java tools check

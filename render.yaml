@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: firebase-apk-bot
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: BOT_TOKEN
+        value: 8442989333:AAHKTjaacGUl0MOAaOJ4ae0zGd7tFI8_-dA
+      - key: PORT
+        value: 10000
+    autoDeploy: true
