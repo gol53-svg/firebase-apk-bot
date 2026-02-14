@@ -686,7 +686,16 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "-o", decompiled_dir,
             "-f"
         ]
-        result = subprocess.run(decompile_cmd, capture_output=True, text=True, timeout=3600, shell=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        
+        # Windows pe shell=False use karo for proper command execution
+        result = subprocess.run(
+            decompile_cmd, 
+            capture_output=True, 
+            text=True, 
+            timeout=3600,
+            shell=False
+        )
+        
         if result.returncode != 0:
             error_msg = result.stderr if result.stderr else result.stdout
             raise Exception(f"Decompile failed: {error_msg[:500]}")
@@ -830,7 +839,14 @@ async def receive_project_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode='Markdown'
         )
         
-        result = subprocess.run(build_cmd, capture_output=True, text=True, timeout=3600, shell=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)  # 60 min
+        result = subprocess.run(
+            build_cmd, 
+            capture_output=True, 
+            text=True, 
+            timeout=3600,
+            shell=False
+        )
+        
         if result.returncode != 0:
             error_msg = result.stderr if result.stderr else result.stdout
             raise Exception(f"Build failed: {error_msg[:500]}")
@@ -1177,7 +1193,15 @@ async def receive_extract_apk(update: Update, context: ContextTypes.DEFAULT_TYPE
             "-o", decompiled_dir,
             "-f"
         ]
-        result = subprocess.run(decompile_cmd, capture_output=True, text=True, timeout=3600, shell=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)  # 60 min
+        
+        result = subprocess.run(
+            decompile_cmd, 
+            capture_output=True, 
+            text=True, 
+            timeout=3600,
+            shell=False
+        )
+        
         if result.returncode != 0:
             error_msg = result.stderr if result.stderr else result.stdout
             raise Exception(f"Decompile failed: {error_msg[:500]}")
